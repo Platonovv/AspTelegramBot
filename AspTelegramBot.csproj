@@ -33,12 +33,4 @@
     <PackageReference Include="Moq" Version="4.*" />
 </ItemGroup>
 
-<ItemGroup>
-  <Folder Include="API\Controllers\" />
-  <Folder Include="API\Middlewares\" />
-  <Folder Include="Application\Mappings\" />
-  <Folder Include="Application\Validators\" />
-  <Folder Include="Infrastructure\Diagnostics\" />
-</ItemGroup>
-
 </Project>
