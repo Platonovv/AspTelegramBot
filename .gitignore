@@ -1,0 +1,51 @@
+# === .NET ===
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.db
+*.sqlite
+*.db-wal
+*.db-shm
+
+# === Logs ===
+*.log
+logs/
+log/
+
+# === Environment ===
+.env
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.json.local
+
+# === Visual Studio / JetBrains ===
+.vs/
+.idea/
+.vscode/
+*.iml
+
+# === Build artifacts ===
+dist/
+publish/
+out/
+wwwroot/lib/
+wwwroot/dist/
+
+# === Docker ===
+**/Dockerfile~
+docker-compose.override.yml
+**/pgdata/
+**/data/
+**/temp/
+**/tmp/
+
+# === Migrations (если вручную не надо пушить) ===
+# Uncomment if you prefer to keep migrations locally
+# Migrations/
+
+# === OS files ===
+Thumbs.db
+.DS_Store
