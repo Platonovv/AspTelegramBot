@@ -1,51 +1,112 @@
-# === .NET ===
-bin/
-obj/
+## ASP.NET Core ##
+## Игнорируем временные файлы, но НЕ исходный код!
+
+# Временные файлы сборки
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+[Oo]ut/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]uild/
+[Bb]uildArtifacts/
+
+# Папка публикации (важно!)
+publish/
+dist/
+wwwroot/lib/
+wwwroot/dist/
+
+# Файлы пользователя
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
-*.db
-*.sqlite
-*.db-wal
-*.db-shm
+*.userprefs
 
-# === Logs ===
-*.log
-logs/
-log/
-
-# === Environment ===
+# Файлы окружения и секреты (важно!)
 .env
+.env.*
+appsettings.*.json
+!appsettings.json  # Исключение: основной appsettings.json НЕ игнорировать
 appsettings.Development.json
-appsettings.Local.json
-appsettings.*.json.local
+appsettings.Staging.json
+appsettings.Production.json
+secrets.json
+connectionstrings.*.json
 
-# === Visual Studio / JetBrains ===
+# Файлы IDE
 .vs/
-.idea/
 .vscode/
-*.iml
+.idea/
+*.swp
+*.swo
+*.sublime-*
 
-# === Build artifacts ===
-dist/
-publish/
-out/
-wwwroot/lib/
-wwwroot/dist/
+# NuGet
+packages/
+*.nupkg
+.nuget/
+NuGet.Config
 
-# === Docker ===
-**/Dockerfile~
+# Docker
 docker-compose.override.yml
-**/pgdata/
-**/data/
-**/temp/
-**/tmp/
+.docker/
 
-# === Migrations (если вручную не надо пушить) ===
-# Uncomment if you prefer to keep migrations locally
-# Migrations/
+# Базы данных и миграции (если не хотите пушить)
+*.mdf
+*.ldf
+*.sdf
+__MigrationHistory.cs
 
-# === OS files ===
+# Файлы покрытия кода
+*.coverage
+*.coveragexml
+
+# Сервис Fabric
+ServiceFabric/
+
+# Файлы резервных копий
+*.backup
+*.bak
+*.tmp
+[Tt]emp/
+[Tt]mp/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Файлы операционной системы
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Файлы проектов Rider
+*.sln.iml
+*.csproj.iml
+
+# Локальные истории
+.history/
+
+# Файлы специфичные для вашего проекта
+# logs/ - уже есть выше
+# Dependencies/ - если это временная папка
