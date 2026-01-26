@@ -1,10 +1,11 @@
 ﻿using AspTelegramBot.Application.Filters;
-using AspTelegramBot.Application.Handlers;
 using AspTelegramBot.Application.Services.Bot;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+
+namespace AspTelegramBot.Application.Handlers;
 
 /// <summary>
 /// Класс для обработки различных команд бота.
@@ -151,8 +152,8 @@ public class CommandHandler
 		}
 
 		_telegramMessageFilter.Enqueue(update.Message?.Chat.Id ?? update.CallbackQuery.Message.Chat.Id,
-		                              $"Привет, {name}! 😄",
-		                              ct: ct);
+		                               $"Привет, {name}! 😄",
+		                               ct: ct);
 	}
 
 	private async Task HandleGameAsync(Update update, CancellationToken ct)
@@ -284,9 +285,9 @@ public class CommandHandler
 				{
 					// Если не удалось отправить ЛС
 					_telegramMessageFilter.Enqueue(update.Message.Chat.Id,
-					                              $"{update.Message.From.FirstName}, не удалось отправить список команд в личку. "
-					                              + $"Проверьте, включены ли у вас сообщения от ботов.",
-					                              ct: ct);
+					                               $"{update.Message.From.FirstName}, не удалось отправить список команд в личку. "
+					                               + $"Проверьте, включены ли у вас сообщения от ботов.",
+					                               ct: ct);
 				}
 
 				break;

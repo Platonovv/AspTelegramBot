@@ -45,7 +45,7 @@ public class TelegramBotService
 
 	private Task HandleErrorAsync(ITelegramBotClient client, Exception ex, CancellationToken ct)
 	{
-		Console.WriteLine($"Telegram Bot Error: {ex.Message}");
+		Console.WriteLine($"Ошибка: {ex.Message}");
 		return Task.CompletedTask;
 	}
 
@@ -73,19 +73,19 @@ public class TelegramBotService
 				return;
 			}
 
+			switch (update.Message.Type)
+			{
+				case MessageType.Sticker:
+					_telegramMessageFilter.Enqueue(update.Message.Chat.Id,
+					                               $"FileId стикера:\n{update.Message.Sticker.FileId}",
+					                               ct: ct);
+
+					return;
+			}
+
 			// Убираем @username
 			var cleanedText = messageText.Replace($"@{_botUsername}", "", StringComparison.OrdinalIgnoreCase).Trim();
 			cleanedText = string.Join(' ', cleanedText.Split(' ', StringSplitOptions.RemoveEmptyEntries));
-
-			// Если это стикер, показываем FileId
-			if (update.Message.Type == MessageType.Sticker)
-			{
-				_telegramMessageFilter.Enqueue(update.Message.Chat.Id,
-				                              $"FileId стикера:\n{update.Message.Sticker.FileId}",
-				                              ct: ct);
-
-				return;
-			}
 
 			// Проверка Админки
 			if (await adminHandler.HandleAdminCommand(update, cleanedText, ct))
@@ -105,9 +105,7 @@ public class TelegramBotService
 
 			// Если личка или упомянут — ответ по умолчанию
 			if (chatType == ChatType.Private || isMentioned)
-			{
 				_telegramMessageFilter.Enqueue(update.Message.Chat.Id, "Не знаю такой команды 😅.", ct: ct);
-			}
 		}
 		else if (update.CallbackQuery != null)
 		{

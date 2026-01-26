@@ -1,7 +1,8 @@
-﻿using System.Text.RegularExpressions;
-using AspTelegramBot.Application.Filters;
+﻿using AspTelegramBot.Application.Filters;
 using AspTelegramBot.Infrastructure.Repositories;
 using Telegram.Bot.Types;
+
+namespace AspTelegramBot.Application.Handlers;
 
 /// <summary>
 /// Класс для обработки ключевых слов, хранящихся в базе данных.
@@ -9,7 +10,6 @@ using Telegram.Bot.Types;
 public class KeywordHandler
 {
 	private readonly BotPhrasesRepository _repository;
-	private List<(Regex Regex, string Response)> _regexEntries;
 	private readonly TelegramMessageFilter _telegramMessageFilter;
 
 	public KeywordHandler(BotPhrasesRepository repository, TelegramMessageFilter telegramMessageFilter)
@@ -33,7 +33,7 @@ public class KeywordHandler
 			if (!regex.IsMatch(messageText))
 				continue;
 
-			_telegramMessageFilter.Enqueue(update.Message.Chat.Id, response, ct : ct);
+			_telegramMessageFilter.Enqueue(update.Message?.Chat.Id, response, ct: ct);
 			return true;
 		}
 

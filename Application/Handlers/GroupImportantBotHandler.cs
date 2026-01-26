@@ -2,6 +2,8 @@
 using AspTelegramBot.Infrastructure.Repositories;
 using Telegram.Bot.Types;
 
+namespace AspTelegramBot.Application.Handlers;
+
 /// <summary>
 /// Обрабатывает важные сообщения в группах на основе ключевых слов.
 /// </summary>

@@ -8,6 +8,8 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using User = AspTelegramBot.Domain.Entities.User;
 
+namespace AspTelegramBot.Application.Handlers;
+
 /// <summary>
 /// Обрабатывает команды, предназначенные для администраторов.
 /// </summary>
@@ -48,23 +50,22 @@ public class AdminHandler
 			if (await CheckFromRoles(ct, userId, ["Admin", "Moderator"]))
 				return true;
 
-			var args = messageText["/addphrase ".Length..].Split(";", 2); // формат: триггер;ответ
-			if (args.Length < 2)
+			var args = messageText["/addphrase ".Length..].Split(";", 3); // формат: триггер;ответ;категория
+			if (args.Length < 3)
 			{
 				await _botClient.SendTextMessageAsync(userId,
-				                                      "Используй формат: /addphrase триггер;ответ",
+				                                      "Используй формат: /addphrase триггер;ответ;категория (keyword/group)",
 				                                      cancellationToken: ct);
 				return true;
 			}
 
 			var trigger = args[0].Trim();
 			var response = args[1].Trim();
+			var category = args[2].Trim();
 
 			await _repository.AddPhraseAsync(new BotPhrase
 			{
-				TriggerText = trigger,
-				ResponseText = response,
-				Category = "keyword"
+				TriggerText = trigger, ResponseText = response, Category = category
 			});
 
 			await _botClient.SendTextMessageAsync(userId, $"Фраза '{trigger}' добавлена!", cancellationToken: ct);
@@ -76,9 +77,12 @@ public class AdminHandler
 			if (await CheckFromRoles(ct, userId, ["Admin", "Moderator"]))
 				return true;
 
-			var trigger = messageText["/removephrase ".Length..].Trim();
+			var args = messageText["/removephrase ".Length..].Split(";", 2); // формат: фраза;категория
 
-			var removed = await _repository.RemovePhraseAsync(trigger, "keyword");
+			var trigger = args[0].Trim();
+			var category = args[1].Trim();
+
+			var removed = await _repository.RemovePhraseAsync(trigger, category);
 			if (removed)
 				await _botClient.SendTextMessageAsync(userId, $"Фраза '{trigger}' удалена!", cancellationToken: ct);
 			else
