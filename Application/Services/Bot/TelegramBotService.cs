@@ -74,9 +74,10 @@ public class TelegramBotService
 		var messageText = update.Message?.Text?.Trim() ?? update.CallbackQuery?.Data;
 		var chatId = update.Message?.Chat.Id ?? update.CallbackQuery?.Message?.Chat.Id;
 		var chatType = update.Message?.Chat.Type;
-		
-		// Стикеры обрабатываем независимо от текста
-		if (update.Message?.Type == MessageType.Sticker)
+		var isGroupChat = chatType is ChatType.Group or ChatType.Supergroup;
+
+		// Стикеры обрабатываем только в личном чате
+		if (!isGroupChat && update.Message?.Type == MessageType.Sticker)
 		{
 			var stickerHandler = allHandlers.OfType<StickerHandler>().FirstOrDefault();
 			if (stickerHandler != null && await stickerHandler.HandleAsync(update, ct))
@@ -89,7 +90,8 @@ public class TelegramBotService
 		var isMentioned = messageText.Contains($"@{_botUsername}", StringComparison.OrdinalIgnoreCase);
 
 		// ===== Группы =====
-		if (chatType is ChatType.Group or ChatType.Supergroup)
+
+		if (isGroupChat)
 		{
 			foreach (var groupHandler in groupHandlers)
 			{
