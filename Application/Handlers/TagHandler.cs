@@ -1,6 +1,6 @@
 ﻿using AspTelegramBot.Application.Filters;
+using AspTelegramBot.Application.Interfaces.ForHandler;
 using AspTelegramBot.Infrastructure.Repositories;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace AspTelegramBot.Application.Handlers;
@@ -8,12 +8,11 @@ namespace AspTelegramBot.Application.Handlers;
 /// <summary>
 /// Обрабатывает операции, связанные с тегами и их обработкой в сообщениях.
 /// </summary>
-public class TagHandler
+public class TagHandler : IUpdateHandler
 {
-	private readonly Random _rnd = new();
-	private Dictionary<string, List<string>>? _tags;
 	private readonly BotPhrasesRepository _repository;
 	private readonly TelegramMessageFilter _telegramMessageFilter;
+	private readonly Random _rnd = new();
 
 	public TagHandler(BotPhrasesRepository repository, TelegramMessageFilter telegramMessageFilter)
 	{
@@ -21,37 +20,40 @@ public class TagHandler
 		_telegramMessageFilter = telegramMessageFilter;
 	}
 
-	public async Task<IEnumerable<string>> GetAllTags()
+	public async Task<bool> HandleAsync(Update update, CancellationToken ct)
 	{
-		var tagsDesc = await _repository.GetTagsAsync();
-		return tagsDesc.Keys;
-	}
+		if (update.Message == null)
+			return false;
 
-	public async Task<bool> HandleTagAsync(Update update, string messageText, CancellationToken ct)
-	{
-		_tags = await _repository.GetTagsAsync();
+		var tags = await _repository.GetTagsAsync();
+		var text = update.Message.Text;
 
-		foreach (var (keyword, responses) in _tags)
+		foreach (var (keyword, responses) in tags)
 		{
-			if (!messageText.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+			if (!text.Contains(keyword, StringComparison.OrdinalIgnoreCase))
 				continue;
 
-			var parts = messageText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+			var parts = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 			if (parts.Length < 2)
 			{
 				_telegramMessageFilter.Enqueue(update.Message.Chat.Id,
-				                              $"Используй так: {keyword} @никнейм @Ivan_Kalimistz_Kallen_bot",
-				                              ct: ct);
+				                               $"Используй так: {keyword} @никнейм @bot_name",
+				                               ct: ct);
 				return true;
 			}
 
 			var targetUsername = parts[1];
-			var responseText = responses[_rnd.Next(responses.Count)].Replace("{username}", targetUsername);
-
-			_telegramMessageFilter.Enqueue(update.Message.Chat.Id, responseText, ct: ct);
+			var response = responses[_rnd.Next(responses.Count)].Replace("{username}", targetUsername);
+			_telegramMessageFilter.Enqueue(update.Message.Chat.Id, response, ct: ct);
 			return true;
 		}
 
 		return false;
+	}
+
+	public async Task<IEnumerable<string>> GetAllTags()
+	{
+		var tags = await _repository.GetTagsAsync();
+		return tags.Keys;
 	}
 }

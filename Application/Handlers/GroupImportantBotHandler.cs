@@ -1,4 +1,5 @@
 ﻿using AspTelegramBot.Application.Filters;
+using AspTelegramBot.Application.Interfaces.ForHandler;
 using AspTelegramBot.Infrastructure.Repositories;
 using Telegram.Bot.Types;
 
@@ -7,30 +8,34 @@ namespace AspTelegramBot.Application.Handlers;
 /// <summary>
 /// Обрабатывает важные сообщения в группах на основе ключевых слов.
 /// </summary>
-public class GroupImportantBotHandler
+public class GroupImportantBotHandler : IUpdateHandler
 {
-	private readonly BotPhrasesRepository _rep;
-	private Dictionary<string, string>? _groupKeywords;
+	private readonly BotPhrasesRepository _repository;
 	private readonly TelegramMessageFilter _telegramMessageFilter;
 
-	public GroupImportantBotHandler(BotPhrasesRepository rep, TelegramMessageFilter telegramMessageFilter)
+	public GroupImportantBotHandler(BotPhrasesRepository repository, TelegramMessageFilter telegramMessageFilter)
 	{
-		_rep = rep;
+		_repository = repository;
 		_telegramMessageFilter = telegramMessageFilter;
 	}
 
-	public async Task HandleKeyword(Update update, string messageText, CancellationToken ct)
+	public async Task<bool> HandleAsync(Update update, CancellationToken ct)
 	{
-		_groupKeywords = await _rep.GetGroupKeywordsAsync();
+		if (update.Message == null)
+			return false;
 
-		foreach (var key in _groupKeywords.Keys)
+		var keywords = await _repository.GetGroupKeywordsAsync();
+		var text = update.Message.Text;
+
+		foreach (var key in keywords.Keys)
 		{
-			if (!messageText.Contains(key, StringComparison.OrdinalIgnoreCase))
-				continue;
-
-			_telegramMessageFilter.Enqueue(update.Message.Chat.Id, _groupKeywords[key], ct: ct);
-
-			return;
+			if (text != null && text.Contains(key, StringComparison.OrdinalIgnoreCase))
+			{
+				_telegramMessageFilter.Enqueue(update.Message.Chat.Id, keywords[key], ct: ct);
+				return true;
+			}
 		}
+
+		return false;
 	}
 }

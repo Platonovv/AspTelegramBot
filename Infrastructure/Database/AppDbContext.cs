@@ -19,6 +19,8 @@ public class AppDbContext : DbContext
 	public DbSet<UserLog> UserLogs { get; set; }
 	public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
+	public DbSet<AudioFile> AudioFiles => Set<AudioFile>();
+
 	public DbSet<BotPhrase> BotPhrases { get; set; }
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -32,5 +34,14 @@ public class AppDbContext : DbContext
 		            .UsingEntity(j => j.ToTable("UserRoles")); // название таблицы связей
 
 		modelBuilder.Entity<User>().Property(u => u.RowVersion).IsRowVersion().HasDefaultValue(new byte[8]);
+
+		modelBuilder.Entity<AudioFile>(entity =>
+		{
+			entity.ToTable("AudioFiles"); // без экранирования
+			entity.Property(e => e.Id).HasColumnName("Id");
+			entity.Property(e => e.Key).HasColumnName("Key");
+			entity.Property(e => e.FileId).HasColumnName("FileId");
+			entity.Property(e => e.CreatedAt).HasColumnName("CreatedAt");
+		});
 	}
 }

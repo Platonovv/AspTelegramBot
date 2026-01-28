@@ -98,12 +98,18 @@ public class Program
 
 		builder.Services.AddSingleton(botClient);
 
+		//Repository
 		builder.Services.AddScoped<BotPhrasesRepository>();
+		builder.Services.AddScoped<AudioRepository>();
+
+		//Handlers
+		builder.Services.AddScoped<AudioHandler>();
 		builder.Services.AddScoped<KeywordHandler>();
 		builder.Services.AddScoped<TagHandler>();
 		builder.Services.AddScoped<GroupImportantBotHandler>();
 		builder.Services.AddScoped<CommandHandler>();
 		builder.Services.AddScoped<AdminHandler>();
+		builder.Services.AddScoped<StickerHandler>();
 
 		builder.Services.AddSingleton<TelegramMessageFilter>();
 		builder.Services.AddSingleton<TelegramBotService>();

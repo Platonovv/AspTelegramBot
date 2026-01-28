@@ -4,19 +4,19 @@ using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using IUpdateHandler = AspTelegramBot.Application.Interfaces.ForHandler.IUpdateHandler;
 
 namespace AspTelegramBot.Application.Services.Bot;
 
 /// <summary>
-/// Класс, предоставляющий основной функционал работы с Telegram Bot API.
+/// Класс для работы с Telegram Bot API по новому паттерну IUpdateHandler.
 /// </summary>
 public class TelegramBotService
 {
 	private readonly TelegramBotClient _botClient;
-
-	private string? _botUsername;
 	private readonly IServiceScopeFactory _scopeFactory;
 	private readonly TelegramMessageFilter _telegramMessageFilter;
+	private string? _botUsername;
 
 	public TelegramBotService(TelegramBotClient botClient,
 	                          IServiceScopeFactory scopeFactory,
@@ -38,7 +38,10 @@ public class TelegramBotService
 
 		_botClient.StartReceiving(HandleUpdateAsync,
 		                          HandleErrorAsync,
-		                          new ReceiverOptions {AllowedUpdates = [], ThrowPendingUpdates = true});
+		                          new ReceiverOptions
+		                          {
+			                          AllowedUpdates = Array.Empty<UpdateType>(), ThrowPendingUpdates = true
+		                          });
 
 		Console.WriteLine($"Бот @{_botUsername} запущен!");
 	}
@@ -51,67 +54,64 @@ public class TelegramBotService
 
 	private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken ct)
 	{
-		if (update.Message != null)
+		using var scope = _scopeFactory.CreateScope();
+
+		// Все хендлеры
+		var allHandlers = new List<IUpdateHandler>
 		{
-			using var scope = _scopeFactory.CreateScope();
+			scope.ServiceProvider.GetRequiredService<AdminHandler>(),
+			scope.ServiceProvider.GetRequiredService<CommandHandler>(),
+			scope.ServiceProvider.GetRequiredService<KeywordHandler>(),
+			scope.ServiceProvider.GetRequiredService<TagHandler>(),
+			scope.ServiceProvider.GetRequiredService<AudioHandler>(),
+			scope.ServiceProvider.GetRequiredService<GroupImportantBotHandler>(),
+			scope.ServiceProvider.GetRequiredService<StickerHandler>()
+		};
 
-			// Берём Scoped сервисы внутри scope
-			var adminHandler = scope.ServiceProvider.GetRequiredService<AdminHandler>();
-			var commandHandler = scope.ServiceProvider.GetRequiredService<CommandHandler>();
-			var keywordHandler = scope.ServiceProvider.GetRequiredService<KeywordHandler>();
-			var tagHandler = scope.ServiceProvider.GetRequiredService<TagHandler>();
-			var groupHandler = scope.ServiceProvider.GetRequiredService<GroupImportantBotHandler>();
+		var groupHandlers = allHandlers.Where(x => x is GroupImportantBotHandler or AudioHandler or CommandHandler)
+		                               .ToList();
 
-			var messageText = update.Message.Text?.Trim() ?? "";
-			var chatType = update.Message.Chat.Type;
-			var isMentioned = messageText.Contains($"@{_botUsername}", StringComparison.OrdinalIgnoreCase);
-
-			// В группе реагируем только на упоминания или важные сообщения
-			if (chatType is ChatType.Group or ChatType.Supergroup && !isMentioned && !messageText.StartsWith("/"))
-			{
-				await groupHandler.HandleKeyword(update, messageText, ct);
+		var messageText = update.Message?.Text?.Trim() ?? update.CallbackQuery?.Data;
+		var chatId = update.Message?.Chat.Id ?? update.CallbackQuery?.Message?.Chat.Id;
+		var chatType = update.Message?.Chat.Type;
+		
+		// Стикеры обрабатываем независимо от текста
+		if (update.Message?.Type == MessageType.Sticker)
+		{
+			var stickerHandler = allHandlers.OfType<StickerHandler>().FirstOrDefault();
+			if (stickerHandler != null && await stickerHandler.HandleAsync(update, ct))
 				return;
-			}
+		}
 
-			switch (update.Message.Type)
+		if (messageText == null || chatId == null)
+			return;
+
+		var isMentioned = messageText.Contains($"@{_botUsername}", StringComparison.OrdinalIgnoreCase);
+
+		// ===== Группы =====
+		if (chatType is ChatType.Group or ChatType.Supergroup)
+		{
+			foreach (var groupHandler in groupHandlers)
 			{
-				case MessageType.Sticker:
-					_telegramMessageFilter.Enqueue(update.Message.Chat.Id,
-					                               $"FileId стикера:\n{update.Message.Sticker.FileId}",
-					                               ct: ct);
-
+				if (await groupHandler.HandleAsync(update, ct))
 					return;
 			}
-
-			// Убираем @username
-			var cleanedText = messageText.Replace($"@{_botUsername}", "", StringComparison.OrdinalIgnoreCase).Trim();
-			cleanedText = string.Join(' ', cleanedText.Split(' ', StringSplitOptions.RemoveEmptyEntries));
-
-			// Проверка Админки
-			if (await adminHandler.HandleAdminCommand(update, cleanedText, ct))
-				return;
-
-			// Проверка команд
-			if (await commandHandler.HandleCommand(update, cleanedText, ct))
-				return;
-
-			// Проверка ключевых слов из базы
-			if (await keywordHandler.HandleKeyword(update, cleanedText, ct))
-				return;
-
-			// Проверка тегов с делегатами
-			if (await tagHandler.HandleTagAsync(update, cleanedText, ct))
-				return;
-
-			// Если личка или упомянут — ответ по умолчанию
-			if (chatType == ChatType.Private || isMentioned)
-				_telegramMessageFilter.Enqueue(update.Message.Chat.Id, "Не знаю такой команды 😅.", ct: ct);
 		}
-		else if (update.CallbackQuery != null)
+		// ===== Личные сообщения =====
+		else
 		{
-			using var scope = _scopeFactory.CreateScope();
-			var commandHandler = scope.ServiceProvider.GetRequiredService<CommandHandler>();
-			await commandHandler.HandleCallbackQueryAsync(update.CallbackQuery, ct);
+			foreach (var handler in allHandlers)
+			{
+				if (handler.GetType() == typeof(GroupImportantBotHandler))
+					continue;
+
+				if (await handler.HandleAsync(update, ct))
+					return;
+			}
 		}
+
+		// Ответ по умолчанию
+		if (chatType == ChatType.Private || isMentioned)
+			_telegramMessageFilter.Enqueue(chatId, "Не знаю такой команды 😅.", ct: ct);
 	}
 }
