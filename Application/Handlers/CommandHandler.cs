@@ -15,6 +15,7 @@ public class CommandHandler : IUpdateHandler
 	private readonly TelegramMessageFilter _telegramMessageFilter;
 
 	private readonly Dictionary<string, Func<Update, CancellationToken, Task>> _commands;
+	public ChatAction ChatAction => ChatAction.Typing;
 
 	public CommandHandler(TelegramBotClient botClient,
 	                      KeywordHandler keywordHandler,
@@ -77,6 +78,8 @@ public class CommandHandler : IUpdateHandler
 		var key = rawText.TrimStart('/');
 		if (key.Contains("@"))
 			key = key.Split('@')[0];
+
+		await _botClient.SendChatActionAsync(update.Message.Chat.Id, ChatAction, cancellationToken: ct);
 
 		if (_commands.TryGetValue(key, out var handler))
 		{

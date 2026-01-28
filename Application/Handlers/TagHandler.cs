@@ -1,7 +1,9 @@
 ﻿using AspTelegramBot.Application.Filters;
 using AspTelegramBot.Application.Interfaces.ForHandler;
 using AspTelegramBot.Infrastructure.Repositories;
+using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 namespace AspTelegramBot.Application.Handlers;
 
@@ -10,14 +12,20 @@ namespace AspTelegramBot.Application.Handlers;
 /// </summary>
 public class TagHandler : IUpdateHandler
 {
+	private readonly TelegramBotClient _botClient;
 	private readonly BotPhrasesRepository _repository;
 	private readonly TelegramMessageFilter _telegramMessageFilter;
 	private readonly Random _rnd = new();
 
-	public TagHandler(BotPhrasesRepository repository, TelegramMessageFilter telegramMessageFilter)
+	public ChatAction ChatAction => ChatAction.Typing;
+
+	public TagHandler(BotPhrasesRepository repository,
+	                  TelegramMessageFilter telegramMessageFilter,
+	                  TelegramBotClient botClient)
 	{
 		_repository = repository;
 		_telegramMessageFilter = telegramMessageFilter;
+		_botClient = botClient;
 	}
 
 	public async Task<bool> HandleAsync(Update update, CancellationToken ct)
@@ -32,6 +40,8 @@ public class TagHandler : IUpdateHandler
 		{
 			if (!text.Contains(keyword, StringComparison.OrdinalIgnoreCase))
 				continue;
+
+			await _botClient.SendChatActionAsync(update.Message.Chat.Id, ChatAction, cancellationToken: ct);
 
 			var parts = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 			if (parts.Length < 2)

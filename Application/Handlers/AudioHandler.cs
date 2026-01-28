@@ -6,6 +6,7 @@ using Telegram.Bot.Types.InputFiles;
 using File = System.IO.File;
 using System.Security.Cryptography;
 using AspTelegramBot.Application.Interfaces.ForHandler;
+using Telegram.Bot.Types.Enums;
 
 namespace AspTelegramBot.Application.Handlers;
 
@@ -16,6 +17,8 @@ public class AudioHandler : IUpdateHandler
 {
 	private readonly TelegramBotClient _botClient;
 	private readonly AudioRepository _repository;
+
+	public ChatAction ChatAction => ChatAction.RecordVoice;
 
 	public AudioHandler(TelegramBotClient botClient, AudioRepository repository)
 	{
@@ -43,6 +46,8 @@ public class AudioHandler : IUpdateHandler
 			var hashBytes = await md5.ComputeHashAsync(stream, ct);
 			fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
 		}
+
+		await _botClient.SendChatActionAsync(chatId, ChatAction, cancellationToken: ct);
 
 		// Проверяем базу
 		var audioFromDb = await _repository.GetByKeyAsync(key);

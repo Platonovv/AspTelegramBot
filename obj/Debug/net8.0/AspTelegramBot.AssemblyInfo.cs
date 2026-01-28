@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AspTelegramBot")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c6319e4d9fdcd82170c626ca90971619eac9cee2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1a7709fd465e55f9f0d05a1b1211343032564b5c")]
 [assembly: System.Reflection.AssemblyProductAttribute("AspTelegramBot")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AspTelegramBot")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -6,6 +6,7 @@ using AspTelegramBot.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using User = AspTelegramBot.Domain.Entities.User;
 
 namespace AspTelegramBot.Application.Handlers;
@@ -21,6 +22,8 @@ public class AdminHandler : IUpdateHandler
 	private readonly TelegramBotClient _botClient;
 	private readonly BotPhrasesRepository _repository;
 	private readonly IPasswordHasher<User> _passwordHasher;
+
+	public ChatAction ChatAction => ChatAction.Typing;
 
 	public AdminHandler(TelegramBotClient botClient,
 	                    BotPhrasesRepository repository,
@@ -44,6 +47,8 @@ public class AdminHandler : IUpdateHandler
 
 		var userId = update.Message.From.Id;
 		var messageText = update.Message.Text.Trim();
+
+		await _botClient.SendChatActionAsync(update.Message.Chat.Id, ChatAction, cancellationToken: ct);
 
 		// ===== Add / Remove phrase =====
 		if (messageText.StartsWith("/addphrase "))

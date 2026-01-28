@@ -1,7 +1,9 @@
 ﻿using AspTelegramBot.Application.Filters;
 using AspTelegramBot.Application.Interfaces.ForHandler;
 using AspTelegramBot.Infrastructure.Repositories;
+using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 namespace AspTelegramBot.Application.Handlers;
 
@@ -10,11 +12,17 @@ namespace AspTelegramBot.Application.Handlers;
 /// </summary>
 public class KeywordHandler : IUpdateHandler
 {
+	private readonly TelegramBotClient _botClient;
 	private readonly BotPhrasesRepository _repository;
 	private readonly TelegramMessageFilter _telegramMessageFilter;
 
-	public KeywordHandler(BotPhrasesRepository repository, TelegramMessageFilter telegramMessageFilter)
+	public ChatAction ChatAction => ChatAction.Typing;
+
+	public KeywordHandler(BotPhrasesRepository repository,
+	                      TelegramMessageFilter telegramMessageFilter,
+	                      TelegramBotClient botClient)
 	{
+		_botClient = botClient;
 		_repository = repository;
 		_telegramMessageFilter = telegramMessageFilter;
 	}
@@ -29,6 +37,8 @@ public class KeywordHandler : IUpdateHandler
 		{
 			if (!regex.IsMatch(update.Message.Text))
 				continue;
+
+			await _botClient.SendChatActionAsync(update.Message.Chat.Id, ChatAction, cancellationToken: ct);
 
 			_telegramMessageFilter.Enqueue(update.Message.Chat.Id, response, ct: ct);
 			return true;
