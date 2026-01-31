@@ -5,6 +5,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.InputFiles;
 using File = System.IO.File;
 using System.Security.Cryptography;
+using AspTelegramBot.Application.Filters;
 using AspTelegramBot.Application.Interfaces.ForHandler;
 using Telegram.Bot.Types.Enums;
 
@@ -15,15 +16,19 @@ namespace AspTelegramBot.Application.Handlers;
 /// </summary>
 public class AudioHandler : IUpdateHandler
 {
-	private readonly TelegramBotClient _botClient;
 	private readonly AudioRepository _repository;
+	private readonly TelegramBotClient _botClient;
+	private readonly TelegramMessageFilter _telegramMessageFilter;
 
 	public ChatAction ChatAction => ChatAction.RecordVoice;
 
-	public AudioHandler(TelegramBotClient botClient, AudioRepository repository)
+	public AudioHandler(TelegramBotClient botClient,
+	                    AudioRepository repository,
+	                    TelegramMessageFilter telegramMessageFilter)
 	{
 		_botClient = botClient;
 		_repository = repository;
+		_telegramMessageFilter = telegramMessageFilter;
 	}
 
 	public async Task<bool> HandleAsync(Update update, CancellationToken ct)
@@ -47,13 +52,12 @@ public class AudioHandler : IUpdateHandler
 			fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
 		}
 
-		await _botClient.SendChatActionAsync(chatId, ChatAction, cancellationToken: ct);
-
 		// Проверяем базу
 		var audioFromDb = await _repository.GetByKeyAsync(key);
 		if (audioFromDb != null && audioFromDb.FileHash == fileHash)
 		{
 			// Файл не менялся — используем старый FileId
+			await _botClient.SendChatActionAsync(chatId, ChatAction, cancellationToken: ct);
 			await _botClient.SendAudioAsync(chatId, audioFromDb.FileId, cancellationToken: ct);
 			return true;
 		}
@@ -65,6 +69,7 @@ public class AudioHandler : IUpdateHandler
 		}
 
 		// Отправляем новый файл
+		await _botClient.SendChatActionAsync(chatId, ChatAction, cancellationToken: ct);
 		await using var newStream = File.OpenRead(filePath);
 		var message = await _botClient.SendAudioAsync(chatId,
 		                                              new InputOnlineFile(newStream, $"{key}.mp3"),

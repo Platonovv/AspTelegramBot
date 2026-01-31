@@ -12,11 +12,8 @@ namespace AspTelegramBot.Application.Handlers;
 /// </summary>
 public class GroupImportantBotHandler : IUpdateHandler
 {
-	private readonly TelegramBotClient _botClient;
 	private readonly BotPhrasesRepository _repository;
 	private readonly TelegramMessageFilter _telegramMessageFilter;
-
-	public ChatAction ChatAction => ChatAction.RecordVoice;
 
 	public GroupImportantBotHandler(BotPhrasesRepository repository,
 	                                TelegramMessageFilter telegramMessageFilter,
@@ -24,7 +21,6 @@ public class GroupImportantBotHandler : IUpdateHandler
 	{
 		_repository = repository;
 		_telegramMessageFilter = telegramMessageFilter;
-		_botClient = botClient;
 	}
 
 	public async Task<bool> HandleAsync(Update update, CancellationToken ct)
@@ -39,8 +35,6 @@ public class GroupImportantBotHandler : IUpdateHandler
 		{
 			if (text != null && text.Contains(key, StringComparison.OrdinalIgnoreCase))
 			{
-				await _botClient.SendChatActionAsync(update.Message.Chat.Id, ChatAction, cancellationToken: ct);
-
 				_telegramMessageFilter.Enqueue(update.Message.Chat.Id, keywords[key], ct: ct);
 				return true;
 			}

@@ -2,6 +2,7 @@
 using System.Threading.Channels;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace AspTelegramBot.Application.Filters
@@ -87,12 +88,19 @@ namespace AspTelegramBot.Application.Filters
 			{
 				try
 				{
-					await _botClient.SendTextMessageAsync(
-						                item.ChatId,
-						                item.Text,
-						                replyMarkup: item.ReplyMarkup,
-						                cancellationToken: item.Ct)
-					                .WaitAsync(item.Ct);
+					if (item.ChatId != null)
+					{
+						await _botClient.SendChatActionAsync(item.ChatId,
+						                                     ChatAction.Typing,
+						                                     cancellationToken: item.Ct);
+
+						await _botClient.SendTextMessageAsync(
+							                item.ChatId,
+							                item.Text,
+							                replyMarkup: item.ReplyMarkup,
+							                cancellationToken: item.Ct)
+						                .WaitAsync(item.Ct);
+					}
 				}
 				catch (ApiRequestException ex) when (ex.ErrorCode == 429)
 				{
